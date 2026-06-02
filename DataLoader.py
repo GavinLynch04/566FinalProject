@@ -43,14 +43,24 @@ class ProjectDataLoader:
             adata = sc.datasets.pbmc3k()
             adata.write(file_path)
 
-        # scanpy preprocessing, might need to change this
         sc.pp.filter_cells(adata, min_genes=200)
         sc.pp.filter_genes(adata, min_cells=3)
         sc.pp.normalize_total(adata, target_sum=1e4)
         sc.pp.log1p(adata)
 
+        print("Loading processed reference labels...")
+        adata_ref = sc.datasets.pbmc3k_processed()
+
+        common_cells = adata.obs_names.intersection(adata_ref.obs_names)
+        adata = adata[common_cells].copy()
+        adata_ref = adata_ref[common_cells]
+
         X = adata.X.toarray() if hasattr(adata.X, 'toarray') else adata.X
-        y = np.zeros(X.shape[0])
+
+        y_categories = adata_ref.obs['louvain'].astype('category')
+        y = y_categories.cat.codes.to_numpy()
+
+        print(f"Successfully loaded PBMC 3k: X shape = {X.shape}, unique classes = {len(np.unique(y))}")
         return X, y
 
     def load_synthetic(self, n_samples=3000, type='swiss_roll', noise=0.1):
