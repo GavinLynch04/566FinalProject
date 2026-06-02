@@ -1,65 +1,43 @@
-from sklearn.manifold import TSNE, Isomap
-from sklearn.decomposition import PCA
-import umap
-
 from DataLoader import ProjectDataLoader
+from evaluation import evaluate_dataset, print_results_table
 from plotting import plot_time_metrics, plot_memory_metrics, plot_combined_dual_axis, plot_2d_embeddings
-from helper import subsample_dataset, generate_mock_results, profile_model_performance
 
 
-def get_models():
-    """Returns freshly instantiated models targeting 2D embeddings."""
-    return {
-        "PCA": PCA(n_components=2),
-        "t-SNE": TSNE(n_components=2, random_state=42, n_jobs=-1),
-        "Isomap": Isomap(n_components=2, n_jobs=-1),
-        "UMAP": umap.UMAP(n_components=2, random_state=42)
-    }
-
-
-def run_pipeline(subsample_size=3000, num_runs=10, fast_dev=False):
-    dataset_names = ["Fashion-MNIST", "PBMC 3k"]
-    all_results = {}
-
-    # Bypass data loading entirely if in fast development mode
-    if fast_dev:
-        print("[FAST DEV MODE] Bypassing data loader. Simulating pipelines...")
-        for ds_name in dataset_names:
-            all_results[ds_name] = {}
-            for model_name in get_models().keys():
-                all_results[ds_name][model_name] = generate_mock_results(ds_name, model_name,
-                                                                         num_samples=subsample_size)
-        return all_results
-
-    # Standard Production Pipeline execution
-    DL = ProjectDataLoader()
-    datasets = {
-        "Fashion-MNIST": DL.load_fashion_mnist(),
-        "PBMC 3k": DL.load_pbmc_3k()
-    }
+def run_pipeline(num_runs=3, fast_dev=False):
+    datasets = _load_datasets(fast_dev)
+    all_results, baselines = {}, {}
 
     for ds_name, (X, y) in datasets.items():
-        print(f"\n========== Processing Dataset: {ds_name} ==========")
-        X_eval, y_eval = subsample_dataset(X, y, subsample_size)
-        all_results[ds_name] = {}
+        print(f"\n{'=' * 60}\n  Dataset: {ds_name}\n{'=' * 60}")
+        baseline, dim_data = evaluate_dataset(ds_name, X, y, num_runs=num_runs, fast_dev=fast_dev)
+        baselines[ds_name]   = baseline
+        all_results[ds_name] = dim_data
 
-        for model_name, model_instance in get_models().items():
-            print(f"Running {model_name} ({num_runs} runs)...")
+    return all_results, baselines
 
-            metrics = profile_model_performance(model_instance, X_eval, num_runs)
-            if metrics:
-                all_results[ds_name][model_name] = {**metrics, "labels": y_eval}
-                print(
-                    f"Finished {model_name}: Avg Time = {metrics['time']:.2f}s | Avg Mem = {metrics['memory_mb']:.2f} MB")
-            else:
-                print(f"Skipping results generation for {model_name} due to execution errors.")
 
-    return all_results
+def _load_datasets(fast_dev):
+    if fast_dev:
+        print("[FAST DEV MODE] Bypassing data loader.\n")
+        import numpy as np
+        return {
+            "Fashion-MNIST": (np.random.rand(500, 784).astype("float32"), np.random.randint(0, 10, 500)),
+            "PBMC 3k":       (np.random.rand(300, 100).astype("float32"), np.random.randint(0, 8,  300)),
+        }
+    DL = ProjectDataLoader()
+    return {
+        "Fashion-MNIST": DL.load_fashion_mnist(),
+        "PBMC 3k":       DL.load_pbmc_3k(),
+    }
+
 
 if __name__ == "__main__":
-    pipeline_results = run_pipeline(fast_dev=True)
+    results, baselines = run_pipeline(fast_dev=False)
+    print_results_table(results, baselines)
 
-    plot_time_metrics(pipeline_results)
-    plot_memory_metrics(pipeline_results)
-    plot_combined_dual_axis(pipeline_results)
-    plot_2d_embeddings(pipeline_results)
+    # Plotting (d=2 only)
+    # d2 = {ds: {2: data[2]} for ds, data in results.items()}
+    # plot_time_metrics(d2)
+    # plot_memory_metrics(d2)
+    # plot_combined_dual_axis(d2)
+    # plot_2d_embeddings(d2)
