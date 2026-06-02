@@ -21,13 +21,13 @@ def plot_computational_metrics(all_results):
         fig.suptitle(f"Computational Evaluation: {ds_name}", fontsize=14, fontweight='bold')
 
         # Execution Time Barplot
-        sns.barplot(x=models, y=times, ax=ax1, palette="viridis")
+        sns.barplot(x=models, y=times, ax=ax1, hue=models, palette="viridis", legend=False)
         ax1.set_title("Execution Time")
         ax1.set_ylabel("Seconds")
         ax1.set_xlabel("Model")
 
         # Peak Memory Barplot
-        sns.barplot(x=models, y=mems, ax=ax2, palette="magma")
+        sns.barplot(x=models, y=mems, ax=ax2, hue=models, palette="magma", legend=False)
         ax2.set_title("Peak Memory Usage")
         ax2.set_ylabel("Megabytes (MB)")
         ax2.set_xlabel("Model")
