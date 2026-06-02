@@ -56,7 +56,7 @@ def _run_all(ds_name, X, y, num_runs, fast_dev):
             for model_name, model_instance in get_models(d).items():
                 if fast_dev:
                     mock = generate_mock_results(ds_name, model_name, X.shape[0], d)
-                    result = {k: mock[k] for k in ("time", "memory_mb", "X_train_red", "X_test_red")}
+                    result = {k: mock[k] for k in ("time", "memory_mb", "X_train_reduced", "X_test_reduced")}
                     y_tr, y_te = mock["y_train"], mock["y_test"]
                 else:
                     X_tr, y_tr = X_train, y_train

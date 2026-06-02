@@ -15,7 +15,7 @@ COLOR_MAP = {
     "t-SNE": {"dark": "#dd3c57", "light": "#ec93a2"},
     "Isomap": {"dark": "#7f3cdd", "light": "#b893ec"},
     "UMAP": {"dark": "#3cdd8c", "light": "#93ecbf"},
-    "Model5": {"dark": "#dd9a3c", "light": "#ecc793"}
+    "VAE": {"dark": "#dd9a3c", "light": "#ecc793"}
 }
 
 
@@ -220,8 +220,8 @@ def plot_2d_embeddings(all_results):
                 break
 
             ax = axes_flat[i]
-            X_2d = data["reduced_data"]
-            labels = data["labels"]
+            X_2d = data["X_train_reduced"]
+            labels = data["y_train"]
             is_monochromatic = len(np.unique(labels)) <= 1
 
             scatter = ax.scatter(

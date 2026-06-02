@@ -4,23 +4,19 @@ import tracemalloc
 from sklearn.decomposition import PCA
 from sklearn.manifold import Isomap
 import umap
+from Autoencoder import VariationalAutoencoder
 
 
 def get_models(n_components):
-    """Returns freshly instantiated models for a given dimensionality."""
     return {
         "PCA":    PCA(n_components=n_components),
         "Isomap": Isomap(n_components=n_components, n_jobs=-1),
         "UMAP": umap.UMAP(n_components=n_components, n_jobs=-1),
-        # "Autoencoder": Autoencoder(n_components=n_components),
+        "VAE": VariationalAutoencoder(n_components=n_components, epochs=25, device="cpu"),
     }
 
 
 def profile_single_run(model_instance, X_train, X_test):
-    """
-    Fits model on X_train (tracking time + peak memory), transforms both splits.
-    Returns a dict with time, memory_mb, X_train_reduced, X_test_reduced — or None on failure.
-    """
     tracemalloc.start()
     start = time.perf_counter()
     try:

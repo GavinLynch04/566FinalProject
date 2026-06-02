@@ -36,8 +36,8 @@ if __name__ == "__main__":
     print_results_table(results, baselines)
 
     # Plotting (d=2 only)
-    # d2 = {ds: {2: data[2]} for ds, data in results.items()}
-    # plot_time_metrics(d2)
-    # plot_memory_metrics(d2)
-    # plot_combined_dual_axis(d2)
-    # plot_2d_embeddings(d2)
+    d2 = {ds: {2: data[2]} for ds, data in results.items()}
+    plot_time_metrics(d2)
+    plot_memory_metrics(d2)
+    plot_combined_dual_axis(d2)
+    plot_2d_embeddings(d2)

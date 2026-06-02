@@ -2,7 +2,7 @@ import numpy as np
 
 # --- Constants ---
 DIMENSIONS        = [2, 3, 4]
-MODEL_NAMES       = ["PCA", "Isomap", "UMAP"]
+MODEL_NAMES       = ["PCA", "Isomap", "UMAP", "VAE"]
 N_RUNS            = 10
 SUBSAMPLE_SIZE    = 7500
 TEST_SIZE         = 0.2
@@ -44,8 +44,8 @@ def generate_mock_results(ds_name, model_name, num_samples, n_components):
     return {
         "time":        max(0.001, np.random.normal(mean_time, mean_time * 0.1)),
         "memory_mb":   max(1.0,   np.random.normal(mean_mem,  mean_mem  * 0.1)),
-        "X_train_red": np.random.normal(size=(train_size, n_components)).astype(np.float32),
-        "X_test_red":  np.random.normal(size=(test_size,  n_components)).astype(np.float32),
+        "X_train_reduced": np.random.normal(size=(train_size, n_components)).astype(np.float32),
+        "X_test_reduced":  np.random.normal(size=(test_size,  n_components)).astype(np.float32),
         "y_train":     np.random.randint(0, n_classes, train_size),
         "y_test":      np.random.randint(0, n_classes, test_size),
     }
