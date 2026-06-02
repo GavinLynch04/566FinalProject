@@ -3,7 +3,7 @@ from sklearn.decomposition import PCA
 import umap
 
 from DataLoader import ProjectDataLoader
-from plotting import plot_computational_metrics, plot_2d_embeddings
+from plotting import plot_time_metrics, plot_memory_metrics, plot_combined_dual_axis, plot_2d_embeddings
 from helper import subsample_dataset, generate_mock_results, profile_model_performance
 
 
@@ -59,5 +59,7 @@ def run_pipeline(subsample_size=3000, num_runs=10, fast_dev=False):
 if __name__ == "__main__":
     pipeline_results = run_pipeline(fast_dev=True)
 
-    plot_computational_metrics(pipeline_results)
+    plot_time_metrics(pipeline_results)
+    plot_memory_metrics(pipeline_results)
+    plot_combined_dual_axis(pipeline_results)
     plot_2d_embeddings(pipeline_results)
