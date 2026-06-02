@@ -1,12 +1,10 @@
-import time
-import tracemalloc
-import numpy as np
 from sklearn.manifold import TSNE, Isomap
 from sklearn.decomposition import PCA
 import umap
 
 from DataLoader import ProjectDataLoader
 from plotting import plot_computational_metrics, plot_2d_embeddings
+from helper import subsample_dataset, generate_mock_results, profile_model_performance
 
 
 def get_models():
@@ -19,64 +17,47 @@ def get_models():
     }
 
 
-def run_pipeline(subsample_size=3000):
-    DL = ProjectDataLoader()
+def run_pipeline(subsample_size=3000, num_runs=10, fast_dev=False):
+    dataset_names = ["Fashion-MNIST", "PBMC 3k"]
+    all_results = {}
 
-    # Define datasets to evaluate
+    # Bypass data loading entirely if in fast development mode
+    if fast_dev:
+        print("[FAST DEV MODE] Bypassing data loader. Simulating pipelines...")
+        for ds_name in dataset_names:
+            all_results[ds_name] = {}
+            for model_name in get_models().keys():
+                all_results[ds_name][model_name] = generate_mock_results(ds_name, model_name,
+                                                                         num_samples=subsample_size)
+        return all_results
+
+    # Standard Production Pipeline execution
+    DL = ProjectDataLoader()
     datasets = {
         "Fashion-MNIST": DL.load_fashion_mnist(),
         "PBMC 3k": DL.load_pbmc_3k()
     }
 
-    all_results = {}
-
     for ds_name, (X, y) in datasets.items():
         print(f"\n========== Processing Dataset: {ds_name} ==========")
-
-        # Subsampling safety valve for computationally heavy models (Isomap/t-SNE)
-        if subsample_size and X.shape[0] > subsample_size:
-            print(f"Subsampling dataset from {X.shape[0]} to {subsample_size} for performance safety.")
-            indices = np.random.choice(X.shape[0], subsample_size, replace=False)
-            X_eval, y_eval = X[indices], y[indices]
-        else:
-            X_eval, y_eval = X, y
-
+        X_eval, y_eval = subsample_dataset(X, y, subsample_size)
         all_results[ds_name] = {}
-        models = get_models()
 
-        for model_name, model_instance in models.items():
-            print(f"Running {model_name}...")
+        for model_name, model_instance in get_models().items():
+            print(f"Running {model_name} ({num_runs} runs)...")
 
-            # Reset and start memory tracking
-            tracemalloc.start()
-            start_time = time.perf_counter()
-
-            try:
-                # Fit and transform data
-                X_reduced = model_instance.fit_transform(X_eval)
-
-                end_time = time.perf_counter()
-                _, peak_memory = tracemalloc.get_traced_memory()
-                tracemalloc.stop()
-
-                # Save metrics and embeddings
-                all_results[ds_name][model_name] = {
-                    "time": end_time - start_time,
-                    "memory_mb": peak_memory / (1024 * 1024),  # Convert bytes to MB
-                    "reduced_data": X_reduced,
-                    "labels": y_eval
-                }
+            metrics = profile_model_performance(model_instance, X_eval, num_runs)
+            if metrics:
+                all_results[ds_name][model_name] = {**metrics, "labels": y_eval}
                 print(
-                    f"Finished {model_name}: Time = {end_time - start_time:.2f}s | Peak Mem = {peak_memory / (1024 * 1024):.2f} MB")
-
-            except Exception as e:
-                tracemalloc.stop()
-                print(f"Failed to run {model_name} on {ds_name}: {e}")
+                    f"Finished {model_name}: Avg Time = {metrics['time']:.2f}s | Avg Mem = {metrics['memory_mb']:.2f} MB")
+            else:
+                print(f"Skipping results generation for {model_name} due to execution errors.")
 
     return all_results
 
 if __name__ == "__main__":
-    pipeline_results = run_pipeline()
+    pipeline_results = run_pipeline(fast_dev=True)
 
     plot_computational_metrics(pipeline_results)
     plot_2d_embeddings(pipeline_results)
