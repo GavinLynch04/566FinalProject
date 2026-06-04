@@ -17,25 +17,19 @@ def train_and_evaluate(X_train, y_train, X_test, y_test):
     return accuracy_score(y_test, preds), f1_score(y_test, preds, average="macro")
 
 
-def evaluate_dataset(ds_name, X, y, num_runs=N_RUNS, fast_dev=False):
-    """
-    Runs the full sweep for one dataset.
-    Returns:
-        baseline  : (mean_acc, std_acc, mean_f1, std_f1)
-        dim_data  : { n_components -> { model_name -> aggregated_metrics_dict } }
-    """
+def evaluate_dataset(ds_name, X, y, num_runs=N_RUNS, fast_dev=False, dimensions=None):
+    if dimensions is None:
+        dimensions = DIMENSIONS
     X, y = subsample_dataset(X, y, SUBSAMPLE_SIZE)
-
-    baseline, dim_data = _run_all(ds_name, X, y, num_runs, fast_dev)
+    baseline, dim_data = _run_all(ds_name, X, y, num_runs, fast_dev, dimensions)
     return baseline, dim_data
 
 
-def _run_all(ds_name, X, y, num_runs, fast_dev):
-    """Inner loop: num_runs iterations, each with a fresh random split."""
-    run_acc    = {d: {m: [] for m in MODEL_NAMES} for d in DIMENSIONS}
-    run_f1     = {d: {m: [] for m in MODEL_NAMES} for d in DIMENSIONS}
-    run_time   = {d: {m: [] for m in MODEL_NAMES} for d in DIMENSIONS}
-    run_mem    = {d: {m: [] for m in MODEL_NAMES} for d in DIMENSIONS}
+def _run_all(ds_name, X, y, num_runs, fast_dev, dimensions):
+    run_acc    = {d: {m: [] for m in MODEL_NAMES} for d in dimensions}
+    run_f1     = {d: {m: [] for m in MODEL_NAMES} for d in dimensions}
+    run_time   = {d: {m: [] for m in MODEL_NAMES} for d in dimensions}
+    run_mem    = {d: {m: [] for m in MODEL_NAMES} for d in dimensions}
     base_accs, base_f1s = [], []
 
     # Store last run's reduced arrays for d=2 plotting
@@ -52,7 +46,7 @@ def _run_all(ds_name, X, y, num_runs, fast_dev):
         base_accs.append(acc_b)
         base_f1s.append(f1_b)
 
-        for d in DIMENSIONS:
+        for d in dimensions:
             for model_name, model_instance in get_models(d).items():
                 if fast_dev:
                     mock = generate_mock_results(ds_name, model_name, X.shape[0], d)
@@ -105,9 +99,8 @@ def _aggregate_baseline(accs, f1s):
 
 
 def _aggregate_runs(run_acc, run_f1, run_time, run_mem, last_reduced):
-    """Collapses per-run lists into mean/std dicts."""
     dim_data = {}
-    for d in DIMENSIONS:
+    for d in run_acc:
         dim_data[d] = {}
         for model_name in MODEL_NAMES:
             accs  = run_acc[d][model_name]

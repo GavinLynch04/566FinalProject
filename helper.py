@@ -2,7 +2,7 @@ import numpy as np
 
 # --- Constants ---
 DIMENSIONS        = [2, 3, 4]
-MODEL_NAMES       = ["PCA", "Isomap", "UMAP", "VAE"]
+MODEL_NAMES       = ["PCA", "Isomap", "UMAP", "t-SNE", "VAE"]
 N_RUNS            = 10
 SUBSAMPLE_SIZE    = 7500
 TEST_SIZE         = 0.2
@@ -28,11 +28,13 @@ def generate_mock_results(ds_name, model_name, num_samples, n_components):
             "PCA":    (0.05,  9.46),
             "Isomap": (0.98,  104.24),
             "UMAP":   (33.43, 79.65),
+            "t-SNE":  (45.20, 88.30),
         },
         "PBMC 3k": {
             "PCA":    (0.37,  140.17),
             "Isomap": (2.07,  80.32),
             "UMAP":   (19.33, 191.43),
+            "t-SNE":  (38.10, 95.50),
         },
     }
 

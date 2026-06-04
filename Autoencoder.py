@@ -47,13 +47,13 @@ class VAEBackbone(nn.Module):
 
 
 class VariationalAutoencoder:
-    def __init__(self, n_components=2, hidden_dims=[256, 128], lr=1e-3, epochs=30, batch_size=256, device="cpu"):
+    def __init__(self, n_components=2, hidden_dims=None, lr=1e-3, epochs=50, batch_size=256, device="cpu", beta=0.5):
         self.n_components = n_components
         self.hidden_dims = hidden_dims
         self.lr = lr
         self.epochs = epochs
         self.batch_size = batch_size
-
+        self.beta = beta
         self.device = torch.device(device)
         self.model = None
 
@@ -61,8 +61,12 @@ class VariationalAutoencoder:
         X_tensor = torch.tensor(X, dtype=torch.float32)
         input_dim = X_tensor.shape[1]
 
-        self.model = VAEBackbone(input_dim, self.n_components, self.hidden_dims).to(self.device)
+        h = max(32, min(256, input_dim * 8))
+        hidden_dims = self.hidden_dims if self.hidden_dims is not None else [h, h // 2]
+
+        self.model = VAEBackbone(input_dim, self.n_components, hidden_dims).to(self.device)
         optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.epochs)
 
         dataset = TensorDataset(X_tensor)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
@@ -72,16 +76,13 @@ class VariationalAutoencoder:
             for batch in dataloader:
                 x_batch = batch[0].to(self.device)
                 optimizer.zero_grad()
-
                 recon_x, mu, logvar = self.model(x_batch)
-
                 recon_loss = nn.MSELoss(reduction='sum')(recon_x, x_batch)
-
                 kl_loss = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
-
-                total_loss = (recon_loss + kl_loss) / x_batch.size(0)
+                total_loss = (recon_loss + self.beta * kl_loss) / x_batch.size(0)
                 total_loss.backward()
                 optimizer.step()
+            scheduler.step()
 
         return self.transform(X)
 
