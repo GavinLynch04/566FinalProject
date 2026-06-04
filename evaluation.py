@@ -8,6 +8,8 @@ from helper import (DIMENSIONS, MODEL_NAMES, N_RUNS, SUBSAMPLE_SIZE,
                     TEST_SIZE, subsample_dataset, generate_mock_results)
 from profiling import get_models, profile_single_run
 
+from sklearn.metrics import silhouette_score
+from sklearn.manifold import trustworthiness
 
 def train_and_evaluate(X_train, y_train, X_test, y_test):
     """Fits logistic regression and returns (accuracy, macro-F1)."""
@@ -32,10 +34,12 @@ def evaluate_dataset(ds_name, X, y, num_runs=N_RUNS, fast_dev=False):
 
 def _run_all(ds_name, X, y, num_runs, fast_dev):
     """Inner loop: num_runs iterations, each with a fresh random split."""
-    run_acc    = {d: {m: [] for m in MODEL_NAMES} for d in DIMENSIONS}
-    run_f1     = {d: {m: [] for m in MODEL_NAMES} for d in DIMENSIONS}
-    run_time   = {d: {m: [] for m in MODEL_NAMES} for d in DIMENSIONS}
-    run_mem    = {d: {m: [] for m in MODEL_NAMES} for d in DIMENSIONS}
+    run_acc = {d: {m: [] for m in MODEL_NAMES} for d in DIMENSIONS}
+    run_f1 = {d: {m: [] for m in MODEL_NAMES} for d in DIMENSIONS}
+    run_time = {d: {m: [] for m in MODEL_NAMES} for d in DIMENSIONS}
+    run_mem = {d: {m: [] for m in MODEL_NAMES} for d in DIMENSIONS}
+    run_sil = {d: {m: [] for m in MODEL_NAMES} for d in DIMENSIONS}
+    run_trust = {d: {m: [] for m in MODEL_NAMES} for d in DIMENSIONS}
     base_accs, base_f1s = [], []
 
     # Store last run's reduced arrays for d=2 plotting
@@ -54,6 +58,12 @@ def _run_all(ds_name, X, y, num_runs, fast_dev):
 
         for d in DIMENSIONS:
             for model_name, model_instance in get_models(d).items():
+                if model_instance is None:
+                    continue  # Safely bypasses t-SNE for dimensions 3, 4, and 5
+                # Real-time progress logging
+                mode_str = "[MOCK]" if fast_dev else "[REAL]"
+                print(f"  {mode_str} Dataset: {ds_name} | Run {run + 1}/{num_runs} | Dimension: {d} | Model: {model_name}...", flush=True)
+
                 if fast_dev:
                     mock = generate_mock_results(ds_name, model_name, X.shape[0], d)
                     result = {k: mock[k] for k in ("time", "memory_mb", "X_train_reduced", "X_test_reduced")}
@@ -83,6 +93,18 @@ def _run_all(ds_name, X, y, num_runs, fast_dev):
                 run_time[d][model_name].append(result["time"])
                 run_mem[d][model_name].append(result["memory_mb"])
 
+                # Calculate Unsupervised Metrics on test set to save time
+                try:
+                    sil = silhouette_score(result["X_test_reduced"], y_te)
+                    # Trustworthiness needs original high-dim test data for comparison
+                    trust = trustworthiness(X_test, result["X_test_reduced"], n_neighbors=5)
+                except ValueError:
+                    # Failsafe in case a model outputs NaNs or compresses to a single point
+                    sil, trust = 0.0, 0.0
+
+                run_sil[d][model_name].append(sil)
+                run_trust[d][model_name].append(trust)
+
                 # Keep last run's 2D arrays for plotting
                 if d == 2:
                     last_reduced[model_name] = {
@@ -93,7 +115,7 @@ def _run_all(ds_name, X, y, num_runs, fast_dev):
                     }
 
     baseline = _aggregate_baseline(base_accs, base_f1s)
-    dim_data = _aggregate_runs(run_acc, run_f1, run_time, run_mem, last_reduced)
+    dim_data = _aggregate_runs(run_acc, run_f1, run_time, run_mem, run_sil, run_trust, last_reduced)
     return baseline, dim_data
 
 
@@ -104,23 +126,27 @@ def _aggregate_baseline(accs, f1s):
     }
 
 
-def _aggregate_runs(run_acc, run_f1, run_time, run_mem, last_reduced):
+def _aggregate_runs(run_acc, run_f1, run_time, run_mem, run_sil, run_trust, last_reduced):
     """Collapses per-run lists into mean/std dicts."""
     dim_data = {}
     for d in DIMENSIONS:
         dim_data[d] = {}
         for model_name in MODEL_NAMES:
-            accs  = run_acc[d][model_name]
-            f1s   = run_f1[d][model_name]
-            times = run_time[d][model_name]
-            mems  = run_mem[d][model_name]
+            accs   = run_acc[d][model_name]
+            f1s    = run_f1[d][model_name]
+            times  = run_time[d][model_name]
+            mems   = run_mem[d][model_name]
+            sils   = run_sil[d][model_name]
+            trusts = run_trust[d][model_name]
             if not accs:
                 continue
             entry = {
-                "acc_mean":    np.mean(accs),  "acc_std":    np.std(accs),
-                "f1_mean":     np.mean(f1s),   "f1_std":     np.std(f1s),
-                "time_mean":   np.mean(times), "time_std":   np.std(times),
-                "memory_mean": np.mean(mems),  "memory_std": np.std(mems),
+                "acc_mean":    np.mean(accs),   "acc_std":    np.std(accs),
+                "f1_mean":     np.mean(f1s),    "f1_std":     np.std(f1s),
+                "time_mean":   np.mean(times),  "time_std":   np.std(times),
+                "memory_mean": np.mean(mems),   "memory_std": np.std(mems),
+                "sil_mean":    np.mean(sils),   "sil_std":    np.std(sils),
+                "trust_mean":  np.mean(trusts), "trust_std":  np.std(trusts),
             }
             if d == 2 and last_reduced[model_name]:
                 entry.update(last_reduced[model_name])

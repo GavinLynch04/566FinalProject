@@ -1,8 +1,8 @@
 import numpy as np
 
 # --- Constants ---
-DIMENSIONS        = [2, 3, 4]
-MODEL_NAMES       = ["PCA", "Isomap", "UMAP", "VAE"]
+DIMENSIONS        = [2, 3, 4, 5]
+MODEL_NAMES       = ["PCA", "t-SNE", "Isomap", "UMAP", "VAE"]
 N_RUNS            = 10
 SUBSAMPLE_SIZE    = 7500
 TEST_SIZE         = 0.2

@@ -51,7 +51,7 @@ def plot_time_metrics(all_results):
 
     for ax, (ds_name, models_data) in zip(axes, all_results.items()):
         models = list(models_data.keys())
-        times = [data["time"] for data in models_data.values()]
+        times = [data["time_mean"] for data in models_data.values()]
         stds = [data["time_std"] for data in models_data.values()]
         colors = get_model_colors(models, "dark")
 
@@ -83,7 +83,7 @@ def plot_memory_metrics(all_results):
 
     for ax, (ds_name, models_data) in zip(axes, all_results.items()):
         models = list(models_data.keys())
-        mems = [data["memory_mb"] for data in models_data.values()]
+        mems = [data["memory_mean"] for data in models_data.values()]
         stds = [data["memory_std"] for data in models_data.values()]
         colors = get_model_colors(models, "dark")
 
@@ -118,15 +118,15 @@ def plot_combined_dual_axis(all_results):
     global_max_mem = 0
     for ds_data in all_results.values():
         for m_data in ds_data.values():
-            max_t = m_data["time"] + m_data["time_std"]
-            max_m = m_data["memory_mb"] + m_data["memory_std"]
+            max_t = m_data["time_mean"] + m_data["time_std"]
+            max_m = m_data["memory_mean"] + m_data["memory_std"]
             if max_t > global_max_time: global_max_time = max_t
             if max_m > global_max_mem: global_max_mem = max_m
 
     for i, (ax1, (ds_name, models_data)) in enumerate(zip(axes, all_results.items())):
         models = list(models_data.keys())
-        times = [data["time"] for data in models_data.values()]
-        mems = [data["memory_mb"] for data in models_data.values()]
+        times = [data["time_mean"] for data in models_data.values()]
+        mems = [data["memory_mean"] for data in models_data.values()]
 
         time_stds = [data["time_std"] for data in models_data.values()]
         mem_stds = [data["memory_std"] for data in models_data.values()]
@@ -249,3 +249,125 @@ def plot_2d_embeddings(all_results):
         plt.tight_layout()
         plt.savefig(f"{figure_directory}{ds_name.lower().replace(' ', '_')}_2d_embeddings.png", dpi=300)
         plt.show()
+
+
+def plot_classification_metrics(all_results, baselines):
+    """Line charts comparing downstream Accuracy and F1 across dimensions with baseline markers."""
+    num_ds = len(all_results)
+    fig, axes = plt.subplots(2, num_ds, figsize=(6 * num_ds, 9), sharex=True)
+    if num_ds == 1: axes = np.array([axes]).T
+
+    fig.suptitle("Downstream Classification Signal Preservation", fontsize=16, fontweight='bold')
+
+    # Feature size lookup based on the project proposal specifications
+    dims_map = {
+        "Fashion-MNIST": "784 dims",
+        "PBMC 3k": "~32,000 dims"
+    }
+
+    for col_idx, (ds_name, dim_data) in enumerate(all_results.items()):
+        # Dynamically harvest whatever dimensions exist in the results (e.g., 2, 3, 4, 5)
+        sorted_dims = sorted([int(d) for d in dim_data.keys()])
+        models = list(dim_data[sorted_dims[0]].keys())
+        feat_str = dims_map.get(ds_name, "Full dims")
+
+        # --- Row 0: Accuracy ---
+        ax_acc = axes[0, col_idx]
+        b_acc = baselines[ds_name]["acc_mean"]
+
+        # Thinner horizontal dotted line for baseline
+        ax_acc.axhline(y=b_acc, color='gray', linestyle=':', linewidth=1.2)
+        # Contextual label next to the dotted line near the right margin
+        ax_acc.text(max(sorted_dims) * 0.85, b_acc + (b_acc * 0.01), f"Baseline ({feat_str})",
+                    color='gray', fontsize=9, fontweight='semibold')
+
+        # --- Row 1: Macro-F1 ---
+        ax_f1 = axes[1, col_idx]
+        b_f1 = baselines[ds_name]["f1_mean"]
+        ax_f1.axhline(y=b_f1, color='gray', linestyle=':', linewidth=1.2)
+        ax_f1.text(max(sorted_dims) * 0.85, b_f1 + (b_f1 * 0.01), f"Baseline ({feat_str})",
+                   color='gray', fontsize=9, fontweight='semibold')
+
+        for model_name in models:
+            if model_name == "t-SNE": continue
+            color = COLOR_MAP.get(model_name, {"dark": "#333333"})["dark"]
+
+            acc_means = [dim_data[d][model_name]["acc_mean"] for d in sorted_dims]
+            acc_stds = [dim_data[d][model_name]["acc_std"] for d in sorted_dims]
+            f1_means = [dim_data[d][model_name]["f1_mean"] for d in sorted_dims]
+            f1_stds = [dim_data[d][model_name]["f1_std"] for d in sorted_dims]
+
+            # Line plots matching original aesthetic style
+            ax_acc.errorbar(sorted_dims, acc_means, yerr=acc_stds, fmt='-o', color=color,
+                            linewidth=2, elinewidth=1.2, capsize=3, label=model_name)
+            ax_f1.errorbar(sorted_dims, f1_means, yerr=f1_stds, fmt='-o', color=color,
+                           linewidth=2, elinewidth=1.2, capsize=3, label=model_name)
+
+        # Titles and Formatting
+        ax_acc.set_title(f"{ds_name} (Accuracy)", fontsize=13)
+        ax_f1.set_title(f"{ds_name} (Macro-F1)", fontsize=13)
+
+        ax_f1.set_xlabel("Target Dimensions", fontweight='bold')
+        ax_f1.set_xticks(sorted_dims)
+        ax_f1.set_xticklabels([str(d) for d in sorted_dims])
+
+        if col_idx == 0:
+            ax_acc.set_ylabel("Accuracy Score")
+            ax_f1.set_ylabel("Macro-F1 Score")
+            ax_acc.legend(loc="lower right", frameon=True)
+
+        format_standard_axes(ax_acc)
+        format_standard_axes(ax_f1)
+
+    plt.tight_layout()
+    plt.savefig(f"{figure_directory}classification_signal_linecharts.png", dpi=300)
+    plt.show()
+
+
+def plot_unsupervised_metrics(all_results):
+    """Line charts comparing cluster separation (Silhouette) and neighborhood preservation (Trustworthiness)."""
+    num_ds = len(all_results)
+    fig, axes = plt.subplots(2, num_ds, figsize=(6 * num_ds, 9), sharex=True)
+    if num_ds == 1: axes = np.array([axes]).T
+
+    fig.suptitle("Unsupervised Manifold Structural Integrity", fontsize=16, fontweight='bold')
+
+    for col_idx, (ds_name, dim_data) in enumerate(all_results.items()):
+        sorted_dims = sorted([int(d) for d in dim_data.keys()])
+        models = list(dim_data[sorted_dims[0]].keys())
+
+        ax_sil = axes[0, col_idx]
+        ax_trust = axes[1, col_idx]
+
+        for model_name in models:
+            if model_name == "t-SNE": continue
+            color = COLOR_MAP.get(model_name, {"dark": "#333333"})["dark"]
+
+            sil_means = [dim_data[d][model_name]["sil_mean"] for d in sorted_dims]
+            sil_stds = [dim_data[d][model_name]["sil_std"] for d in sorted_dims]
+            trust_means = [dim_data[d][model_name]["trust_mean"] for d in sorted_dims]
+            trust_stds = [dim_data[d][model_name]["trust_std"] for d in sorted_dims]
+
+            ax_sil.errorbar(sorted_dims, sil_means, yerr=sil_stds, fmt='-s', color=color,
+                            linewidth=2, elinewidth=1.2, capsize=3, label=model_name)
+            ax_trust.errorbar(sorted_dims, trust_means, yerr=trust_stds, fmt='-s', color=color,
+                              linewidth=2, elinewidth=1.2, capsize=3, label=model_name)
+
+        ax_sil.set_title(f"{ds_name} (Silhouette Score)", fontsize=13)
+        ax_trust.set_title(f"{ds_name} (Trustworthiness)", fontsize=13)
+
+        ax_trust.set_xlabel("Target Dimensions", fontweight='bold')
+        ax_trust.set_xticks(sorted_dims)
+        ax_trust.set_xticklabels([str(d) for d in sorted_dims])
+
+        if col_idx == 0:
+            ax_sil.set_ylabel("Silhouette Width")
+            ax_trust.set_ylabel("Trustworthiness Score")
+            ax_sil.legend(loc="upper left", frameon=True)
+
+        format_standard_axes(ax_sil)
+        format_standard_axes(ax_trust)
+
+    plt.tight_layout()
+    plt.savefig(f"{figure_directory}unsupervised_metrics_linecharts.png", dpi=300)
+    plt.show()

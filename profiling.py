@@ -7,12 +7,16 @@ import umap
 from Autoencoder import VariationalAutoencoder
 
 
+from sklearn.manifold import TSNE
+
 def get_models(n_components):
     return {
         "PCA":    PCA(n_components=n_components),
+        # t-SNE will only instantiate for the 2D run to prevent downstream crashes
+        "t-SNE":  TSNE(n_components=n_components, n_jobs=-1) if n_components == 2 else None,
         "Isomap": Isomap(n_components=n_components, n_jobs=-1),
-        "UMAP": umap.UMAP(n_components=n_components, n_jobs=-1),
-        "VAE": VariationalAutoencoder(n_components=n_components, epochs=25, device="cpu"),
+        "UMAP":   umap.UMAP(n_components=n_components, n_jobs=-1),
+        "VAE":    VariationalAutoencoder(n_components=n_components, epochs=25, device="cpu"),
     }
 
 
@@ -20,9 +24,14 @@ def profile_single_run(model_instance, X_train, X_test):
     tracemalloc.start()
     start = time.perf_counter()
     try:
-        X_train_reduced = model_instance.fit_transform(X_train)
-        X_test_reduced = model_instance.transform(X_test)
-        elapsed     = time.perf_counter() - start
+        if isinstance(model_instance, TSNE):
+            X_train_reduced = model_instance.fit_transform(X_train)
+            # Fill with safe zeros since t-SNE cannot inductively project unseen test data
+            X_test_reduced = np.zeros((X_test.shape[0], model_instance.n_components))
+        else:
+            X_train_reduced = model_instance.fit_transform(X_train)
+            X_test_reduced = model_instance.transform(X_test)
+        elapsed = time.perf_counter() - start
         _, peak_mem = tracemalloc.get_traced_memory()
         return {
             "time":        elapsed,
