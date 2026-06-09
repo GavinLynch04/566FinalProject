@@ -63,15 +63,6 @@ class ProjectDataLoader:
         print(f"Successfully loaded PBMC 3k: X shape = {X.shape}, unique classes = {len(np.unique(y))}")
         return X, y
 
-    def load_synthetic(self, n_samples=3000, type='swiss_roll', noise=0.1):
-        if type == 'swiss_roll':
-            X, _ = make_swiss_roll(n_samples=n_samples, noise=noise)
-        else:
-            X, _ = make_moons(n_samples=n_samples, noise=noise)
-
-        X = StandardScaler().fit_transform(X)
-        return X.astype(np.float32)
-
 
 # for autoencoder
 def get_torch_loader(X, batch_size=128, shuffle=True):
