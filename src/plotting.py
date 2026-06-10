@@ -9,7 +9,7 @@ sns.set_theme(style="white")
 figure_directory = "figures/"
 os.makedirs(figure_directory, exist_ok=True)
 
-# Color Map by model (Option 1: Balanced Pop)
+# Color Map by model
 COLOR_MAP = {
     "PCA": {"dark": "#3cb4dd", "light": "#93d6ec"},
     "t-SNE": {"dark": "#dd3c57", "light": "#ec93a2"},
@@ -140,7 +140,7 @@ def plot_combined_dual_axis(all_results):
                             edgecolor='black', linewidth=1, label='Time')
         ax1.errorbar(x_indices - bar_width / 2, times, yerr=time_stds, fmt='none', c='black', capsize=3, elinewidth=1.2)
 
-        # Apply Global Time Scale (+10% padding for visual headroom)
+        # Global Time Scale
         ax1.set_ylim(0, global_max_time * 1.10)
 
         # Format ax1 (Left Axis)
@@ -168,7 +168,7 @@ def plot_combined_dual_axis(all_results):
                            edgecolor='black', linewidth=1, label='Memory')
         ax2.errorbar(x_indices + bar_width / 2, mems, yerr=mem_stds, fmt='none', c='black', capsize=3, elinewidth=1.2)
 
-        # Apply Global Memory Scale (+10% padding for visual headroom)
+        # Global Memory Scale
         ax2.set_ylim(0, global_max_mem * 1.10)
 
         # Format ax2 (Right Axis)

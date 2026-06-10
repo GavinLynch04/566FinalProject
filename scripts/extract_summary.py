@@ -17,7 +17,6 @@ for ds_name, dim_data in results.items():
         print(f"{'Model':<10} | {'Acc':<7} | {'Macro-F1':<8} | {'Silhouette':<10} | {'Trust':<6}")
         print("-" * 55)
         for model, metrics in dim_data[d].items():
-            # Handle t-SNE bypassing higher dimensions gracefully
             acc = f"{metrics.get('acc_mean', 0):.4f}" if model != "t-SNE" or d == "2" else "N/A"
             f1 = f"{metrics.get('f1_mean', 0):.4f}" if model != "t-SNE" or d == "2" else "N/A"
             sil = f"{metrics.get('sil_mean', 0):.4f}" if model != "t-SNE" else "N/A"

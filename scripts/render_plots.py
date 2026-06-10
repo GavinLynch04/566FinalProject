@@ -16,8 +16,6 @@ with open("../metrics_results.json", "r") as f:
 baselines = raw_data["baselines"]
 raw_results = raw_data["results"]
 
-# --- Structural Reconstruction ---
-# Cast stringified keys back to original operational types and arrays
 results = {}
 for ds_name, dim_dict in raw_results.items():
     results[ds_name] = {}
@@ -36,15 +34,12 @@ for ds_name, dim_dict in raw_results.items():
 
 print("[LOAD SUCCESS] In-memory structures fully restored. Generating final plots...")
 
-# 1. Generate line charts over all dimensions
 plot_classification_metrics(results, baselines)
 plot_unsupervised_metrics(results)
 
-# 2. Extract a flat slice for the 2D benchmarks
 target_dim = 2
 dim_2_slice = {ds_name: dataset_dims[target_dim] for ds_name, dataset_dims in results.items()}
 
-# 3. Generate remaining plots seamlessly
 plot_time_metrics(dim_2_slice)
 plot_memory_metrics(dim_2_slice)
 plot_combined_dual_axis(dim_2_slice)

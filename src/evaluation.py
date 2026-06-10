@@ -60,7 +60,7 @@ def _run_all(ds_name, X, y, num_runs, fast_dev):
             for model_name, model_instance in get_models(d).items():
                 if model_instance is None:
                     continue  # Safely bypasses t-SNE for dimensions 3, 4, and 5
-                # Real-time progress logging
+
                 mode_str = "[MOCK]" if fast_dev else "[REAL]"
                 print(f"  {mode_str} Dataset: {ds_name} | Run {run + 1}/{num_runs} | Dimension: {d} | Model: {model_name}...", flush=True)
 
@@ -93,7 +93,7 @@ def _run_all(ds_name, X, y, num_runs, fast_dev):
                 run_time[d][model_name].append(result["time"])
                 run_mem[d][model_name].append(result["memory_mb"])
 
-                # Calculate Unsupervised Metrics on test set to save time
+                # Calculate Unsupervised Metrics on test set
                 try:
                     sil = silhouette_score(result["X_test_reduced"], y_te)
                     # Trustworthiness needs original high-dim test data for comparison

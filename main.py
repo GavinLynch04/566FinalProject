@@ -73,11 +73,11 @@ if __name__ == "__main__":
     # Import the newly added line chart functions
     from src.plotting import plot_classification_metrics, plot_unsupervised_metrics
 
-    # 1. Plot the new line charts across ALL evaluated dimensions (2, 3, 4, 5)
+    # Plot the new line charts across ALL evaluated dimensions (2, 3, 4, 5)
     plot_classification_metrics(results, baselines)
     plot_unsupervised_metrics(results)
 
-    # 2. Keep the original bar/embedding plots cleanly mapped to d=2 slice only
+    # Keep the original bar/embedding plots cleanly mapped to d=2 slice only
     d2 = {ds: {2: data[2]} for ds, data in results.items()}
     plot_time_metrics(d2)
     plot_memory_metrics(d2)
