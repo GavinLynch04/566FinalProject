@@ -17,73 +17,57 @@ pip install numpy scipy scikit-learn matplotlib seaborn torch torchvision umap-l
 
 ## Codebase Repository Directory
 
-### Core Pipeline and Data
+### Root Directory
 
-* **`DataLoader.py`**: Downloads, caches, and prepares the target data arrays. It handles loading and preprocessing for `Fashion-MNIST` (images) and `PBMC 3k` (single-cell RNA sequencing data), alongside synthetic generation configurations (`swiss_roll`, `moons`).
-* **`Autoencoder.py`**: Implements the custom Variational Autoencoder (VAE) architecture in PyTorch. It provides an interface mapping to the standard scikit-learn API (`fit_transform` and `transform` methods) so it integrates with the evaluation loops.
-* **`profiling.py`**: Instantiates the reduction models and tracks hardware resources. It isolates execution clock times using `time` and logs peak memory consumption in megabytes using `tracemalloc`.
-* **`evaluation.py`**: Executes the cross-validation testing loop. It trains a downstream Logistic Regression model to assess classification accuracy and Macro-F1 scores, computes `silhouette_score` and `trustworthiness` matrix evaluations, and formats the ASCII summary tables printed to the terminal.
-* **`plotting.py`**: Contains the configuration layouts for the project visuals. It formats and saves 7 specific charts, including resource efficiency bar charts, 2D cluster maps, and performance trajectory line graphs across dimensions.
-* **`helper.py`**: Stores global experiment parameters (target dimensions, subsample capacities) and generates randomized matrices for quick testing.
+* **`main.py`**: Executes full pipeline, formatting console tables and saving `metrics_results.json`.
+* **`test_run.py`**: Runs diagnostic checks utilizing `helper.py` mock development data.
 
-### Automation
+### `scripts/`
 
-* **`main.py`**: The main script for the full experiment. It triggers data loading, loops evaluations across all models and datasets, prints final tables to the console, and serializes the raw arrays and metrics directly to a local backup file (`metrics_results.json`).
-* **`test_run.py`**: A diagnostic script that executes a mock run of the code using small, random matrices. This is used to verify that the plotting tools and file paths work without waiting for heavy data calculations.
-* **`render_plots.py`**: A utility script that re-reads a saved `metrics_results.json` file and regenerates the 7 image charts. This allows for the re-rendering of graphics without retraining any models.
-* **`extract_summary.py`**: A data extraction tool that parses the `metrics_results.json` file and prints a clean layout of all scores across dimensions 2 through 5.
+* **`extract_summary.py`**: Parses `metrics_results.json` to output evaluation metrics.
+* **`render_plots.py`**: Re-reads `metrics_results.json` to trigger functions defined in `plotting.py`.
+
+### `src/`
+
+* **`Autoencoder.py`**: Custom PyTorch Variational Autoencoder with scikit-learn API.
+* **`DataLoader.py`**: Loads and caches Fashion-MNIST and PBMC 3k datasets.
+* **`evaluation.py`**: Calculates classification accuracy, Macro-F1, silhouette, and trustworthiness scores.
+* **`helper.py`**: Stores experiment constants and mock data utilities for simulated development.
+* **`plotting.py`**: Contains layout configurations for all 7 experimental performance charts.
+* **`profiling.py`**: Measures model execution time and peak memory footprint.
 
 ---
 
 ## How to Configure and Run Experiments
 
-### 1. Adjusting the Number of Runs
+### 1. Launching the Main Experiment (with Custom Runs)
 
-To change how many times each model evaluates per dataset, modify `num_runs` in **`main.py`** as seen below:
+Run the primary pipeline script. You can optionally specify the number of cross-validation iterations using the `--num_runs` flag (defaults to 10):
 
-```python
-if __name__ == "__main__":
-    # Change num_runs 
-    results, baselines = run_pipeline(num_runs=10, fast_dev=False)
-
+```bash
+python main.py --num_runs 5
 ```
 
 ### 2. Executing a Quick Test
 
-Run the test script (which uses mock data) to verify that the environment dependencies, formatting rules, and figure folders render without error:
+Run the diagnostic script with mock development data to verify that environment dependencies and plotting paths function correctly without waiting for full calculations:
 
 ```bash
 python test_run.py
-
 ```
 
-### 3. Launching the Main Experiment
+### 3. Extracting Scores and Regenerating Visuals
 
-To start the real experiment on the actual datasets, run:
+Analyze results or update graphics post-experiment without retraining the models:
 
-```bash
-python main.py
-
-```
-
-This will automatically process the calculations, print the performance layout, and save the data structures.
-
-### 4. Extracting Scores and Regenerating Visuals
-
-To grab raw numbers or figures without rerunning main, use these scripts directly without retraining the models:
-
-* **To re-render all saved figures:**
-```bash
-python render_plots.py
-
-```
-
-
-* **To view a clean breakdown of all numerical metrics:**
-```bash
-python extract_summary.py
-
-```
+* **Re-render all saved figures:**
+  ```bash
+  python scripts/render_plots.py
+  ```
+* **View a clean breakdown of numerical metrics:**
+  ```bash
+  python scripts/extract_summary.py
+  ```
 
 
 
