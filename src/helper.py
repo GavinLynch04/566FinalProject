@@ -4,7 +4,7 @@ import numpy as np
 DIMENSIONS        = [2, 3, 4, 5]
 MODEL_NAMES       = ["PCA", "t-SNE", "Isomap", "UMAP", "VAE"]
 N_RUNS            = 10
-SUBSAMPLE_SIZE    = 7500
+SUBSAMPLE_SIZE    = 5000
 TEST_SIZE         = 0.2
 
 

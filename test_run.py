@@ -1,6 +1,6 @@
 from main import run_pipeline, save_results_to_json
-from evaluation import print_results_table
-from plotting import (
+from src.evaluation import print_results_table
+from src.plotting import (
     plot_classification_metrics,
     plot_unsupervised_metrics,
     plot_time_metrics,

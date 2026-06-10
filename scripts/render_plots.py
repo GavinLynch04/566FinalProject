@@ -1,6 +1,6 @@
 import json
 import numpy as np
-from plotting import (
+from src.plotting import (
     plot_classification_metrics,
     plot_unsupervised_metrics,
     plot_time_metrics,
@@ -10,7 +10,7 @@ from plotting import (
 )
 
 print("Reading experimental runs from local JSON storage backup...")
-with open("metrics_results.json", "r") as f:
+with open("../metrics_results.json", "r") as f:
     raw_data = json.load(f)
 
 baselines = raw_data["baselines"]

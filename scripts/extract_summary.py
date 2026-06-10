@@ -1,6 +1,6 @@
 import json
 
-with open("metrics_results.json", "r") as f:
+with open("../metrics_results.json", "r") as f:
     data = json.load(f)
 
 results = data["results"]
