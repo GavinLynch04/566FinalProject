@@ -3,6 +3,7 @@ from src.evaluation import evaluate_dataset, print_results_table
 from src.plotting import plot_time_metrics, plot_memory_metrics, plot_combined_dual_axis, plot_2d_embeddings
 import json
 import numpy as np
+import argparse
 
 
 def run_pipeline(num_runs=10, fast_dev=False):
@@ -57,9 +58,15 @@ def save_results_to_json(results, baselines, filename="metrics_results.json"):
         json.dump(data, f, indent=4)
     print(f"\n[SUCCESS] All metrics and arrays exported to local file: {filename}")
 
+
 if __name__ == "__main__":
-    results, baselines = run_pipeline(num_runs=10, fast_dev=False)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--num_runs", type=int, default=10)
+
+    args = parser.parse_args()
+    results, baselines = run_pipeline(num_runs=args.num_runs, fast_dev=False)
     print_results_table(results, baselines)
+
     # Save a hard copy of results before plotting
     save_results_to_json(results, baselines)
 
