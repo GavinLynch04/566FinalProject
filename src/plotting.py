@@ -213,6 +213,7 @@ def plot_2d_embeddings(all_results):
         fig, axes = plt.subplots(2, 3, figsize=(18, 10))
         fig.suptitle(f"2D Projections: {ds_name}", fontsize=16, fontweight='bold')
         axes_flat = axes.flatten()
+        handles, new_labels = None, None
 
         i = -1
         for i, (model_name, data) in enumerate(models_data.items()):
@@ -233,14 +234,32 @@ def plot_2d_embeddings(all_results):
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
 
-            if not is_monochromatic and ds_name == "Fashion-MNIST":
-                legend = ax.legend(*scatter.legend_elements(), title="Classes", loc="upper right", fontsize='small')
-                ax.add_artist(legend)
+            if not is_monochromatic:
+                if ds_name == "Fashion-MNIST":
+                    class_names = ["T-shirt/top", "Trouser", "Pullover", "Dress", "Coat",
+                                   "Sandal", "Shirt", "Sneaker", "Bag", "Ankle boot"]
+                    unique_vals = sorted(np.unique(labels).astype(int))
+                    handles, _ = scatter.legend_elements()
+                    new_labels = [class_names[v] for v in unique_vals if v < len(class_names)]
+
+                elif ds_name == "PBMC 3k":
+                    class_names = ["CD4 T cells", "CD14+ Monocytes", "B cells", "CD8 T cells",
+                                   "NK cells", "FCGR3A+ Monocytes", "Dendritic cells", "Megakaryocytes"]
+                    unique_vals = sorted(np.unique(labels).astype(int))
+                    handles, _ = scatter.legend_elements()
+                    new_labels = [class_names[v] for v in unique_vals if v < len(class_names)]
+
+                else:
+                    legend = ax.legend(*scatter.legend_elements(), title="Classes", loc="upper right", fontsize='small')
+                    ax.add_artist(legend)
 
         for j in range(i + 1, len(axes_flat)):
             axes_flat[j].set_xticks([])
             axes_flat[j].set_yticks([])
-            axes_flat[j].set_title("(Empty Slot)", fontsize=10, color="gray")
+            if handles is not None:
+                axes_flat[j].legend(handles, new_labels, loc="center", title="Classes", fontsize='medium')
+            else:
+                axes_flat[j].set_title("(Empty Slot)", fontsize=10, color="gray")
             axes_flat[j].spines['top'].set_visible(False)
             axes_flat[j].spines['right'].set_visible(False)
             axes_flat[j].spines['left'].set_visible(False)
