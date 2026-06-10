@@ -10,7 +10,7 @@ from src.plotting import (
 )
 
 print("Reading experimental runs from local JSON storage backup...")
-with open("../metrics_results.json", "r") as f:
+with open("metrics_results.json", "r") as f:
     raw_data = json.load(f)
 
 baselines = raw_data["baselines"]

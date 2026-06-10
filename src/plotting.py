@@ -69,7 +69,7 @@ def plot_time_metrics(all_results):
         format_standard_axes(ax)
 
     plt.tight_layout()
-    plt.savefig(f"{figure_directory}execution_time_combined.png", dpi=300)
+    plt.savefig(f"{figure_directory}execution_time_combined.png", dpi=600)
     plt.show()
 
 
@@ -101,7 +101,7 @@ def plot_memory_metrics(all_results):
         format_standard_axes(ax)
 
     plt.tight_layout()
-    plt.savefig(f"{figure_directory}memory_footprint_combined.png", dpi=300)
+    plt.savefig(f"{figure_directory}memory_footprint_combined.png", dpi=600)
     plt.show()
 
 
@@ -199,7 +199,7 @@ def plot_combined_dual_axis(all_results):
             axes[1].tick_params(axis='y', left=False, right=False, labelleft=False)
 
     plt.tight_layout()
-    plt.savefig(f"{figure_directory}dual_axis_metrics_combined.png", dpi=300)
+    plt.savefig(f"{figure_directory}dual_axis_metrics_combined.png", dpi=600)
     plt.show()
 
 
@@ -247,7 +247,7 @@ def plot_2d_embeddings(all_results):
             axes_flat[j].spines['bottom'].set_visible(False)
 
         plt.tight_layout()
-        plt.savefig(f"{figure_directory}{ds_name.lower().replace(' ', '_')}_2d_embeddings.png", dpi=300)
+        plt.savefig(f"{figure_directory}{ds_name.lower().replace(' ', '_')}_2d_embeddings.png", dpi=600)
         plt.show()
 
 
@@ -320,7 +320,7 @@ def plot_classification_metrics(all_results, baselines):
         format_standard_axes(ax_f1)
 
     plt.tight_layout()
-    plt.savefig(f"{figure_directory}classification_signal_linecharts.png", dpi=300)
+    plt.savefig(f"{figure_directory}classification_signal_linecharts.png", dpi=600)
     plt.show()
 
 
@@ -369,5 +369,5 @@ def plot_unsupervised_metrics(all_results):
         format_standard_axes(ax_trust)
 
     plt.tight_layout()
-    plt.savefig(f"{figure_directory}unsupervised_metrics_linecharts.png", dpi=300)
+    plt.savefig(f"{figure_directory}unsupervised_metrics_linecharts.png", dpi=600)
     plt.show()
